@@ -23,7 +23,7 @@ class DieWidget(QWidget):
         self.setMinimumSize(MINIMUM_SIZE)
         self._sides = sides
         if value is None:
-            value = rnd.randint(1, sides)
+            value = sides
         self._value = value
         self._is_rolling = False
         self._roll_timer = QTimer(self)

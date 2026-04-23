@@ -1,12 +1,10 @@
 import logging
-from random import randint
+from random import randint, shuffle
 
 from constants import __app_name__
 
 from .die import DieType
 from .game_die import GameDie, GameDieFactory
-
-from .dice_shaker import DiceShaker
 
 
 logger = logging.getLogger(__app_name__)
@@ -75,30 +73,14 @@ class DiceBox:
         self._dice.append(new_die)
 
 
-class GamePlayer:
-    @staticmethod
-    def default_player():
-        player = GamePlayer("Dwayne", 250)
-        player.add_box(DiceBox.default_box())
-        player.add_shaker(DiceShaker.default_shaker())
-
-        # add Dice
-        dice_types = [DieType.D6 for _ in range(4)] + [DieType.D4 for _ in range(3)]
-        for dt in dice_types:
-            new_die = GameDieFactory.random_die(die_type=dt)
-            player.add_die(new_die)
-
-        return player
-
-    def __init__(self, name: str, cash: int):
+class PlayerBase:
+    def __init__(self, name: str, cash: int = 0, dice: list = None):
         self._name = name
         self._cash = cash
-
-        self._boxes = []
-        self._shakers = []
+        self._dice = dice if dice is not None else []
 
     def __str__(self):
-        return f"{self.name}, ${self.cash} #boxes={self.num_boxes}, #shakers={self.num_shakers}, #dice={self.total_num_dice()}"
+        return f"{self.name}, ${self.cash} #dice={self.num_dice}"
 
     @property
     def name(self):
@@ -109,71 +91,88 @@ class GamePlayer:
         return self._cash
 
     @property
-    def boxes(self):
-        return self._boxes
+    def dice(self):
+        return self._dice
 
     @property
-    def num_boxes(self):
-        return len(self.boxes)
+    def num_dice(self):
+        return len(self.dice)
 
-    @property
-    def shakers(self):
-        return self._shakers
+    def add_die(self, new_die: GameDie):
+        if isinstance(new_die, GameDie) and new_die not in self._dice:
+            self._dice.append(new_die)
 
-    @property
-    def num_shakers(self):
-        return len(self.shakers)
+    def remove_die(self, remove_die: GameDie):
+        if isinstance(remove_die, GameDie) and remove_die in self._dice:
+            self._dice.remove(remove_die)
 
-    def total_num_dice(self):
-        return sum([box.num_dice for box in self.boxes])
+    def add_dice(self, dice: list):
+        for d in dice:
+            self.add_die(d)
 
-    def all_dice(self):
+    def add_cash(self, amount: int):
+        self._cash += amount
+
+    def remove_cash(self, amount: int):
+        if amount < 0:
+            raise ValueError(f"amount must be >= 0, got {amount}")
+
+        actual_remove = min(amount, self._cash)
+        self._cash -= actual_remove
+        return actual_remove
+
+    def get_all_dice(self, die_type: DieType | None = None):
+        if die_type is None:
+            return list(self.dice)
+        return [d for d in self.dice if d.sides == die_type.sides]
+
+    def get_dice_group(self, group: list):
         dice = []
-        for box in self.boxes:
-            dice.extend(box.dice)
-        return dice
-
-    def add_box(self, dice_box: DiceBox):
-        if not isinstance(dice_box, DiceBox):
-            logger.warning(f"{dice_box} is not a dicebox")
-            return
-        elif self.boxes and dice_box in self.boxes:
-            logger.warning(f"player already has box: {dice_box}")
-            return
-
-        self._boxes.append(dice_box)
-
-    def add_shaker(self, dice_shaker: DiceShaker):
-        if not isinstance(dice_shaker, DiceShaker):
-            logger.warning(f"{dice_shaker} is not a DiceShaker")
-            return
-        elif self.shakers and dice_shaker in self.shakers:
-            logger.warning(f"player already has shaker: {dice_shaker}")
-            return
-
-        self._shakers.append(dice_shaker)
-
-    def get_box(self):
-        if self.boxes:
-            return self.boxes[0]
-        return None
-
-    def get_shaker(self):
-        if self.shakers:
-            return self.shakers[0]
-        return None
-
-    def add_die(self, die: GameDie):
-        box = self.get_box()
-        if isinstance(box, DiceBox):
-            if box.has_space:
-                box.add_die(die)
-                return True
+        missing_dice = []
+        total_count = 0
+        for g in group:
+            total_count += g[1]
+            sided_dice = self.get_all_dice(g[0])
+            shuffle(sided_dice)
+            sided_count = len(sided_dice)
+            if sided_count < g[1]:
+                missing_dice.append((g, g[1] - sided_count))
+                dice.extend(sided_dice[:sided_count])
             else:
-                logger.warning("Box is full")
-        else:
-            logger.warning("No boxes")
-        return False
+                dice.extend(sided_dice[: g[1]])
+        actual_count = len(dice)
+        if actual_count < total_count:
+            logger.warning(
+                f"Not enough dice for group {group} (actual={actual_count}, total={total_count})"
+            )
+
+        return dice, missing_dice
+
+
+class GamePlayer(PlayerBase):
+    @staticmethod
+    def default_player():
+        player = GamePlayer("Dwayne", 250)
+
+        # add Dice
+        starting_dice = [
+            (DieType.D3, 1),
+            (DieType.D4, 2),
+            (DieType.D6, 5),
+            (DieType.D8, 1),
+            (DieType.D20, 1),
+        ]
+
+        for dt in starting_dice:
+            for _ in range(dt[1]):
+                player.add_die(GameDieFactory.random_die(die_type=dt[0]))
+        return player
+
+    def __init__(self, name: str, cash: int):
+        super().__init__(name, cash)
+
+    def __str__(self):
+        return super().__str__()
 
 
 class Game:

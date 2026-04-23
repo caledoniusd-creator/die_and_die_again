@@ -20,4 +20,4 @@ class PlayerWidget(QWidget):
     def set_player(self, player):
         self.name_label.setText(f"Name: {player.name}")
         self.cash_label.setText(f"Cash: ${player.cash}")
-        self.dice_count_label.setText(f"Total Dice: {player.total_num_dice()}")
+        self.dice_count_label.setText(f"Total Dice: {player.num_dice}")

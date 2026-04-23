@@ -1,4 +1,3 @@
-
 from faker import Faker
 
 
@@ -23,4 +22,3 @@ def random_first_name(gender: str = None) -> str:
         return fake.first_name_female()
     else:
         raise ValueError("gender must be 'male', 'female', or None")
-

@@ -71,7 +71,7 @@ class SandboxWindow(QMainWindow):
 
         # 3. Player Inventory Test
         inventory = PlayerInventoryWidget("Player Inventory")
-        inventory.set_dice(self.player.all_dice())
+        inventory.set_dice(self.player.dice)
         sw3 = QMdiSubWindow()
         sw3.setWidget(inventory)
         sw3.setWindowTitle("Inventory")

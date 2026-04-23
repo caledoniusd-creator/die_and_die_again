@@ -1,5 +1,5 @@
 from enum import Enum, unique
-from random import choice, random
+from random import choices, random
 
 
 from core.die import DieType, Die, DieWeightsWorker
@@ -7,16 +7,20 @@ from core.die import DieType, Die, DieWeightsWorker
 
 @unique
 class DieMaterial(Enum):
-    Wood = ("Wood", "#F5B027")
-    Stone = ("Stone", "#998C75")
-    Resin = ("Resin", "#DA4B49")
-    Metal = ("Metal", "#BFC9CA")
-    GemStone = ("Gemstone", "#9DECD8")
-    RareMetal = ("Rare Metal", "#D0F6F6")
+    Wood = ("Wood", "#F5B027", 1024)
+    Stone = ("Stone", "#998C75", 512)
+    Resin = ("Resin", "#DA4B49", 256)
+    Metal = ("Metal", "#BFC9CA", 128)
+    GemStone = ("Gemstone", "#9DECD8", 64)
+    RareMetal = ("Rare Metal", "#D0F6F6", 32)
+
+    @staticmethod
+    def weights():
+        return [dm.value[2] for dm in DieMaterial]
 
     @staticmethod
     def random():
-        return choice([dm for dm in DieMaterial])
+        return choices([dm for dm in DieMaterial], DieMaterial.weights(), k=1)[0]
 
     def __str__(self):
         return self.value[0]
@@ -27,6 +31,10 @@ class DieMaterial(Enum):
 
 
 class GameDie(Die):
+    @staticmethod
+    def dice_list_string(dice: list):
+        return "[" + "|".join([str(d) for d in dice]) + "]"
+
     def __init__(
         self,
         sides=6,

@@ -1,6 +1,4 @@
 from argparse import ArgumentParser
-from enum import Enum, unique
-from functools import cache
 import logging
 import sys
 from traceback import format_exc
@@ -11,8 +9,8 @@ from core.log_utils import setup_logger
 from core.game_utils import random_first_name
 from core.chance_calculator import ChanceCalculator
 from core.die import DieType
-from core.game_die import GameDieFactory
-from core.game import GamePlayer, Game
+from core.game_die import GameDieFactory, GameDie
+from core.game import PlayerBase, GamePlayer, Game
 from core.dice_games import OddEvenRoundType, OddEvenPlayer, OddEvenGame
 from app import DieApp
 
@@ -25,41 +23,55 @@ def run_die_sandpit():
     # game
     player = GamePlayer.default_player()
     game = Game(player=player)
-    logger.info(f"New Game: {game}")
+
+    logger.info(f"New Game: {game} | #Dice={player.num_dice}")
+    logger.info("Dice: [" + "|".join([str(d) for d in player.dice]) + "]")
+
+    group_def = [
+        (DieType.D6, 5),
+    ]
+    dice_group, missing_dice = player.get_dice_group(group_def)
+    if missing_dice:
+        logger.warning(f"Missing Dice: {missing_dice}")
+
     logger.info(
-        f"#Boxes={player.num_boxes}, #Shakers={player.num_shakers}, #Dice={player.total_num_dice()}"
+        f"Dice Group: {GameDie.dice_list_string(dice_group)} ({len(dice_group)})"
     )
-
-    dice_text = "[" + ", ".join([str(d) for d in player.all_dice()]) + "]"
-    logger.info(f"Dice: {dice_text}")
-
-    dice_group = [GameDieFactory.random_die(die_type=DieType.D6) for _ in range(5)]
-
-    all_rolls = []
-    for _ in range(4):
-        rolls = [d.roll() for d in dice_group]
-
-        rolls_text = ", ".join([str(r) for r in rolls])
-        logger.info(f"Rolls: [{rolls_text}]")
-        all_rolls.append(rolls)
-
-    totals = [sum(r) for r in all_rolls]
-    full_total = sum(totals)
-
-    logger.info(f"Totals: {totals}, full: {full_total}")
 
 
 def run_odds_evens_game():
     logger.info("Odds and Evens")
 
-    def player_text(ply:OddEvenPlayer):
-        return f"{ply.name.rjust(10)} ${ply.cash:4d}: score:{ply.score:3d} [{','.join([str(d) for d in ply.dice])}]"
+    def player_text(ply: OddEvenPlayer):
+        return f"{ply.player.name.rjust(10)} ${ply.player.cash:4d}: score:{ply.score:3d} [{','.join([str(d) for d in ply.dice])}]"
 
-    dice_types = [(DieType.D6, 5),]
+    def create_npc(dice_ref: list, cash: int = 0):
+        npc_player = PlayerBase(f"{random_first_name()} (NPC)", cash)
+        npc_player.add_dice(GameDieFactory.dice_group(dice_ref))
+        return npc_player
+
+    dice_types = [
+        (DieType.D6, 5),
+    ]
     # dice_types = [(DieType.D3, 1), (DieType.D4, 2), (DieType.D6, 2)]
 
-    ply_1 = OddEvenPlayer(random_first_name(), dice=GameDieFactory.dice_group(dice_types))
-    ply_2 = OddEvenPlayer(random_first_name(), dice=GameDieFactory.dice_group(dice_types))
+    player = GamePlayer.default_player()
+    player_dice, player_missing = player.get_dice_group(dice_types)
+    if player_missing:
+        raise ValueError(f"Player Missing Dice: {player_missing}")
+
+    # Weighting upgrade for Player
+    for d in player_dice:
+        d.change_weighting(6, 300.0)
+        d.change_weighting(5, 300.0)
+
+    npc_player = create_npc(dice_types, cash=100)
+    npc_dice, npc_missing = npc_player.get_dice_group(dice_types)
+    if npc_missing:
+        raise ValueError(f"NPC Missing Dice: {npc_missing}")
+
+    ply_1 = OddEvenPlayer(player, dice=player_dice)
+    ply_2 = OddEvenPlayer(npc_player, dice=npc_dice)
 
     for player in [ply_1, ply_2]:
         logger.info(player_text(player))
@@ -78,12 +90,14 @@ def run_odds_evens_game():
         if winner is None:
             winner_text = "Tied!"
         else:
-            winner_text = f"Winner {winner.name}"
+            winner_text = f"Winner {winner.player.name}"
             wins[winner] += 1
         logger.info(f"Game {game_num}: {winner_text} : {score[0]} - {score[1]}")
 
-    wins = sorted([(key, value) for key, value in wins.items()], key=lambda p: p[1], reverse=True)
-    wins_text = ", ".join([f"{w[0].name} ({w[1]})" for w in wins])
+    wins = sorted(
+        [(key, value) for key, value in wins.items()], key=lambda p: p[1], reverse=True
+    )
+    wins_text = ", ".join([f"{w[0].player.name} ({w[1]})" for w in wins])
     logger.info(f"Winner: {wins_text}")
 
 
@@ -91,7 +105,7 @@ def chance_sandpit():
     logger.info("Chance Sandpit")
 
     denom = 10
-    chance = ChanceCalculator(1/denom)
+    chance = ChanceCalculator(1 / denom)
 
     for i in range(10):
         count = 0
@@ -99,7 +113,7 @@ def chance_sandpit():
             count += 1
             if chance.roll():
                 break
-        logger.info(f"{i+1}: Rolled {count} times for 1/{denom} chance.")
+        logger.info(f"{i + 1}: Rolled {count} times for 1/{denom} chance.")
 
 
 def main(args):
@@ -116,8 +130,8 @@ def main(args):
 
     try:
         # run_die_sandpit()
-        # run_odds_evens_game()
-        chance_sandpit()
+        run_odds_evens_game()
+        # chance_sandpit()
 
     except Exception as e:
         logger.debug(format_exc())

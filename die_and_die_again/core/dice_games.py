@@ -1,5 +1,3 @@
-
-
 from enum import Enum, unique
 from functools import cache
 
@@ -7,7 +5,7 @@ import logging
 
 
 from constants import __app_name__
-
+from .game import PlayerBase
 
 logger = logging.getLogger(__app_name__)
 
@@ -28,19 +26,22 @@ class OddEvenRoundType(Enum):
 
 
 class OddEvenPlayer:
-    def __init__(self, name: str, cash: int=10, dice: list|None=None):
-        self._name = name
-        self._cash = cash
+    def __init__(self, player: PlayerBase, dice: list | None = None):
+        self._player = player
         self._dice = dice if dice is not None else []
         self._score = 0
 
     @property
-    def name(self):
-        return self._name
+    def player(self):
+        return self._player
 
-    @property
-    def cash(self):
-        return self._cash
+    # @property
+    # def name(self):
+    #     return self.player.name
+
+    # @property
+    # def cash(self):
+    #     return self.player.cash
 
     @property
     def dice(self):
@@ -58,12 +59,16 @@ class OddEvenPlayer:
 
 
 class OddEvenGame:
-
     @staticmethod
-    def roll_values_text(rolls:list):
+    def roll_values_text(rolls: list):
         return f"[{','.join([str(r) for r in rolls])}]"
 
-    def __init__(self, player_1: OddEvenPlayer, player_2: OddEvenPlayer, rounds: list[OddEvenRoundType]):
+    def __init__(
+        self,
+        player_1: OddEvenPlayer,
+        player_2: OddEvenPlayer,
+        rounds: list[OddEvenRoundType],
+    ):
         self._player_1 = player_1
         self._player_2 = player_2
         self._rounds = rounds
@@ -119,7 +124,7 @@ class OddEvenGame:
         for player, round_score in zip(self.players(), round_scores):
             pscore_t = f"{player.score}"
             score_t = f"{str(round_score[0]).rjust(len(pscore_t))}/{pscore_t}"
-            text = f"{player.name.rjust(10)}:{OddEvenGame.roll_values_text(round_score[1]).rjust(16)} ({score_t})"
+            text = f"{player.player.name.rjust(10)}:{OddEvenGame.roll_values_text(round_score[1]).rjust(16)} ({score_t})"
             if player == self.player_1:
                 round_text += text.ljust(40)
             else:
@@ -129,7 +134,9 @@ class OddEvenGame:
 
     def winner(self):
         tmp_players = sorted(self.players(), key=lambda p: p.score, reverse=True)
-        winner = tmp_players[0] if tmp_players[0].score != tmp_players[1].score else None
+        winner = (
+            tmp_players[0] if tmp_players[0].score != tmp_players[1].score else None
+        )
         return winner, (tmp_players[0].score, tmp_players[1].score)
 
     def reset(self):
