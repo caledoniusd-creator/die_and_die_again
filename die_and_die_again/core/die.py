@@ -1,6 +1,12 @@
 from enum import Enum, unique
+import logging
 from random import choices, choice, random
 from uuid import uuid4, UUID
+
+
+from constants import __app_name__
+
+logger = logging.getLogger(__app_name__)
 
 
 class InvalidSides(ValueError):
@@ -107,6 +113,11 @@ class Die:
     def reset_weights(self):
         self._weights = [1.0 / self.sides for _ in range(self.sides)]
 
+    def value_weight(self, value: int):
+        if value not in self.values:
+            raise ValueError(f"Value must be in {self.values}, got {value}")
+        return self.weights[self.values.index(value)]
+
     def change_weighting(self, value: int, percentage: float):
         if value not in self.values:
             raise ValueError(f"Value must be in {self.values}, got {value}")
@@ -145,9 +156,12 @@ class DieWeightsWorker:
         return self._die
     
     def random_weight_variation(self, range_value: float):
+
         def new_variation_pc():
             return -range_value + (2 * range_value * random())
         
+        logger.info(f"Applying random weights variations: \u00b1 {range_value:3.3f}")
         for v in self.die.values:
-            var = new_variation_pc()
-            logger.debug("")
+            self.die.change_weighting(v, new_variation_pc())
+       
+     
