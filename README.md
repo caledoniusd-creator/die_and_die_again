@@ -17,7 +17,7 @@ A PySide6-based dice game and simulation framework featuring custom geometric di
         - D20: 20-pointed circle
     - **Customizable Appearance**: Set foreground and background colors with automatic thick, dark borders.
     - **Animations**: Smooth rolling animation with randomized values.
-    - **Dynamic Feedback**: Foreground color darkens during animation; tooltips show current die type and value.
+    - **Dynamic Feedback**: Foreground color darkens or lightens during animation for visibility; tooltips show current die type and value.
 - **Container Widgets**: `RollingDiceWidget` and `PlayerInventoryWidget` for managing groups of dice.
 - **Player Widget**: Displays player name, cash, and dice statistics.
 - **Sandbox Window**: An MDI (Multiple Document Interface) environment for testing all widgets and game logic simultaneously.
