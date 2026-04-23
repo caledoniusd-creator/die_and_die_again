@@ -1,3 +1,4 @@
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QWidget, QGridLayout, QVBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
 from ui.die_widget import DieWidget
@@ -27,7 +28,12 @@ class DiceContainerWidget(QWidget):
         self.clear_dice()
         cols = 4
         for i, die in enumerate(dice_list):
-            dw = DieWidget(sides=die.sides, value=getattr(die, "last_roll", None))
+            dw = DieWidget(
+                sides=die.sides,
+                value=getattr(die, "last_roll", None),
+                bg_color=QColor(die.material.color),
+                fg_color=QColor(0, 0, 0),
+            )
             self._dice_widgets.append(dw)
             self.dice_layout.addWidget(dw, i // cols, i % cols)
 

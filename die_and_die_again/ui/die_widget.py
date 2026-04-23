@@ -1,8 +1,13 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Qt, QTimer, QPoint, Property
+from PySide6.QtCore import Qt, QTimer, QPoint, Property, QSize
 from PySide6.QtGui import QPainter, QColor, QPolygon, QPen
 import math
 import random as rnd
+
+
+DEFAULT_BG = QColor(240, 240, 240)
+DEFAULT_FG = QColor(48, 48, 48)
+MINIMUM_SIZE = QSize(96, 96)
 
 
 class DieWidget(QWidget):
@@ -10,12 +15,12 @@ class DieWidget(QWidget):
         self,
         sides=6,
         value=None,
-        bg_color=QColor(240, 240, 240),
-        fg_color=Qt.black,
+        bg_color=DEFAULT_BG,
+        fg_color=DEFAULT_FG,
         parent=None,
     ):
         super().__init__(parent)
-        self.setMinimumSize(60, 60)
+        self.setMinimumSize(MINIMUM_SIZE)
         self._sides = sides
         if value is None:
             value = rnd.randint(1, sides)
@@ -28,12 +33,16 @@ class DieWidget(QWidget):
         self._bg_color = QColor(bg_color)
         self._fg_color = QColor(fg_color)
         self._update_palette()
+        self._update_tooltip()
 
     def _update_palette(self):
         pal = self.palette()
         pal.setColor(self.backgroundRole(), self._bg_color)
         pal.setColor(self.foregroundRole(), self._fg_color)
         self.setPalette(pal)
+
+    def _update_tooltip(self):
+        self.setToolTip(f"D{self._sides}: {self._value}")
 
     @Property(QColor)
     def background_color(self):
@@ -62,6 +71,7 @@ class DieWidget(QWidget):
     @sides.setter
     def sides(self, value):
         self._sides = value
+        self._update_tooltip()
         self.update()
 
     @Property(int)
@@ -73,6 +83,7 @@ class DieWidget(QWidget):
         self._value = val
         if not self._is_rolling:
             self._animation_value = val
+        self._update_tooltip()
         self.update()
 
     def start_roll(self):
@@ -134,7 +145,7 @@ class DieWidget(QWidget):
                 )
                 // 3
             )
-            if rgb_avg < 128:
+            if rgb_avg < 64:
                 text_color = self._fg_color.lighter(150)
             else:
                 text_color = self._fg_color.darker(150)

@@ -1,3 +1,5 @@
+from random import choice
+
 from PySide6.QtWidgets import (
     QMainWindow,
     QMdiArea,
@@ -10,18 +12,20 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
+
 from ui.die_widget import DieWidget
 from ui.dice_container_widgets import RollingDiceWidget, PlayerInventoryWidget
 from ui.player_widget import PlayerWidget
 from core.game import GamePlayer
 from core.game_die import GameDieFactory
 from core.die import DieType
+from die_and_die_again.constants import __app_name__, __version__
 
 
 class SandboxWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Die Sandbox - MDI")
+        self.setWindowTitle(f"{__app_name__} v{__version__}")
         self.setMinimumSize(800, 600)
 
         self.mdi = QMdiArea()
@@ -88,7 +92,7 @@ class SandboxWindow(QMainWindow):
 
     def change_die_sides(self, text):
         self.single_die.sides = int(text)
-        self.single_die.value = 1
+        self.single_die.value = choice([i for i in range(1, self.single_die.sides + 1)])
 
     def roll_single(self):
         self.single_die.start_roll()

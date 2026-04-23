@@ -7,12 +7,12 @@ from core.die import DieType, Die, DieWeightsWorker
 
 @unique
 class DieMaterial(Enum):
-    Wood = ("Wood",)
-    Stone = ("Stone",)
-    Resin = ("Resin",)
-    Metal = ("Metal",)
-    GemStone = ("Gemstone",)
-    RareMetal = ("Rare Metal",)
+    Wood = ("Wood", "#F5B027")
+    Stone = ("Stone", "#998C75")
+    Resin = ("Resin", "#DA4B49")
+    Metal = ("Metal", "#BFC9CA")
+    GemStone = ("Gemstone", "#9DECD8")
+    RareMetal = ("Rare Metal", "#D0F6F6")
 
     @staticmethod
     def random():
@@ -20,6 +20,10 @@ class DieMaterial(Enum):
 
     def __str__(self):
         return self.value[0]
+
+    @property
+    def color(self):
+        return self.value[1]
 
 
 class GameDie(Die):

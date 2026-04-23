@@ -73,7 +73,7 @@ class Die:
         self._values = [v for v in range(1, sides + 1)]
         self._weights = weights or [1.0 / sides for _ in range(sides)]
 
-        self._roll_count = roll_count if roll_count else 0
+        self._rolled_values = {v: 0 for v in self._values}
 
     def __repr__(self):
         return f"<{self.__class__.__name__} unique_id={self.unique_id}, sides={self.sides}, values={self.weighting_str()}>"
@@ -108,7 +108,11 @@ class Die:
 
     @property
     def roll_count(self):
-        return self._roll_count
+        return sum(self.rolled_values.values())
+
+    @property
+    def rolled_values(self):
+        return self._rolled_values
 
     def reset_weights(self):
         self._weights = [1.0 / self.sides for _ in range(self.sides)]
@@ -138,13 +142,18 @@ class Die:
         )
 
     def roll(self):
-        self._roll_count += 1
-        return choices(self.values, weights=self.weights, k=1)[0]
+        rolled_value = choices(self.values, weights=self.weights, k=1)[0]
+        self._rolled_values[rolled_value] += 1
+        return rolled_value
 
     def multiple_roll(self, n: int):
         if n < 1:
             raise ValueError(f"Min rolls is 1, got {n}")
         return [self.roll() for _ in range(n)]
+
+    def reset_all(self):
+        self._rolled_values = {v: 0 for v in self._values}
+        self.reset_weights()
 
 
 class DieWeightsWorker:
