@@ -154,14 +154,12 @@ class DieWeightsWorker:
     @property
     def die(self):
         return self._die
-    
+
     def random_weight_variation(self, range_value: float):
 
         def new_variation_pc():
             return -range_value + (2 * range_value * random())
-        
+
         logger.info(f"Applying random weights variations: \u00b1 {range_value:3.3f}")
         for v in self.die.values:
             self.die.change_weighting(v, new_variation_pc())
-       
-     

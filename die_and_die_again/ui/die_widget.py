@@ -1,12 +1,19 @@
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Qt, QTimer, QRect, QPoint, Property, QPointF
-from PySide6.QtGui import QPainter, QColor, QPolygon, QFont, QPen
+from PySide6.QtCore import Qt, QTimer, QPoint, Property
+from PySide6.QtGui import QPainter, QColor, QPolygon, QPen
 import math
 import random as rnd
 
 
 class DieWidget(QWidget):
-    def __init__(self, sides=6, value=None, bg_color=QColor(240, 240, 240), fg_color=Qt.black, parent=None):
+    def __init__(
+        self,
+        sides=6,
+        value=None,
+        bg_color=QColor(240, 240, 240),
+        fg_color=Qt.black,
+        parent=None,
+    ):
         super().__init__(parent)
         self.setMinimumSize(60, 60)
         self._sides = sides
@@ -17,7 +24,7 @@ class DieWidget(QWidget):
         self._roll_timer = QTimer(self)
         self._roll_timer.timeout.connect(self._update_roll)
         self._animation_value = value
-        
+
         self._bg_color = QColor(bg_color)
         self._fg_color = QColor(fg_color)
         self._update_palette()
@@ -80,22 +87,24 @@ class DieWidget(QWidget):
         self.update()
 
     def _update_roll(self):
-        self._animation_value = rnd.choice([i for i in range(1, self._sides + 1) if i != self._animation_value])
+        self._animation_value = rnd.choice(
+            [i for i in range(1, self._sides + 1) if i != self._animation_value]
+        )
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        
+
         rect = self.rect().adjusted(5, 5, -5, -5)
         side = min(rect.width(), rect.height())
         center = rect.center()
-        
+
         # Calculate border color (darker version of background)
         border_color = self._bg_color.darker(150)
-        
+
         painter.setBrush(self._bg_color)
-        painter.setPen(QPen(border_color, 4)) # Thick border
+        painter.setPen(QPen(border_color, 4))  # Thick border
 
         def create_poly(num_sides: int):
             poly = QPolygon()
@@ -106,7 +115,6 @@ class DieWidget(QWidget):
                 poly.append(QPoint(px, py))
             return poly
 
-
         if self._sides in [3, 4, 6, 8, 10, 12, 20]:
             poly = create_poly(self._sides)
             painter.drawPolygon(poly)
@@ -116,7 +124,16 @@ class DieWidget(QWidget):
 
         # Draw Value
         if self._is_rolling:
-            rgb_avg = sum([self._fg_color.red(), self._fg_color.green(), self._fg_color.blue()]) // 3
+            rgb_avg = (
+                sum(
+                    [
+                        self._fg_color.red(),
+                        self._fg_color.green(),
+                        self._fg_color.blue(),
+                    ]
+                )
+                // 3
+            )
             if rgb_avg < 128:
                 text_color = self._fg_color.lighter(150)
             else:

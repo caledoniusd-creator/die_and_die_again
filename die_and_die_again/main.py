@@ -6,7 +6,7 @@ from traceback import format_exc
 
 from constants import __app_name__, app_info_string
 from core.die import DieType
-from core.game_die import DieMaterial, GameDie, GameDieFactory
+from core.game_die import GameDieFactory
 from core.game import GamePlayer, Game
 from app import DieApp
 
@@ -49,14 +49,14 @@ def run_die_sandpit():
     player = GamePlayer.default_player()
     game = Game(player=player)
     logger.info(f"New Game: {game}")
-    logger.info(f"#Boxes={player.num_boxes}, #Shakers={player.num_shakers}, #Dice={player.total_num_dice()}")
+    logger.info(
+        f"#Boxes={player.num_boxes}, #Shakers={player.num_shakers}, #Dice={player.total_num_dice()}"
+    )
 
     dice_text = "[" + ", ".join([str(d) for d in player.all_dice()]) + "]"
     logger.info(f"Dice: {dice_text}")
 
-    dice_group = [
-        GameDieFactory.random_die(die_type=DieType.D6) for _ in range(5)
-    ]
+    dice_group = [GameDieFactory.random_die(die_type=DieType.D6) for _ in range(5)]
 
     all_rolls = []
     for _ in range(4):
@@ -76,7 +76,9 @@ def main(args):
     setup_logger(__app_name__)
     logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
     logger.info(app_info_string())
-    logger.info(f"[loglvl={logging.getLevelName(logger.getEffectiveLevel())}]Starting...")
+    logger.info(
+        f"[loglvl={logging.getLevelName(logger.getEffectiveLevel())}]Starting..."
+    )
 
     if args.gui:
         app = DieApp(sys.argv)

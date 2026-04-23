@@ -47,25 +47,32 @@ class GameDie(Die):
         return text
 
 
-
 class GameDieFactory:
-
     @classmethod
-    def new_die(cls, sides: int, weights=None, unique_id=None, material=None, random_variations=True):
-        die = GameDie(sides=sides, weights=weights, unique_id=unique_id, material=material)
+    def new_die(
+        cls,
+        sides: int,
+        weights=None,
+        unique_id=None,
+        material=None,
+        random_variations=True,
+    ):
+        die = GameDie(
+            sides=sides, weights=weights, unique_id=unique_id, material=material
+        )
         if random_variations:
             variation = max(0.1, random() * 5.0)
             DieWeightsWorker(die).random_weight_variation(variation)
         return die
-    
+
     @classmethod
-    def random_die(cls, die_type: DieType|None=None, random_variations=True):
+    def random_die(cls, die_type: DieType | None = None, random_variations=True):
         die_type = die_type if isinstance(die_type, DieType) else DieType.random()
         weights = None
         return GameDieFactory.new_die(
-            sides=die_type.sides, 
+            sides=die_type.sides,
             weights=weights,
             unique_id=None,
             material=None,
-            random_variations=random_variations
+            random_variations=random_variations,
         )
