@@ -80,3 +80,11 @@ class GameDieFactory:
             material=None,
             random_variations=random_variations,
         )
+
+    @classmethod
+    def dice_group(cls, dice_types):
+        dice = []
+        for d in dice_types:
+            dt, count = d[0], d[1]
+            dice.extend([GameDieFactory.random_die(dt) for _ in range(count)])
+        return dice

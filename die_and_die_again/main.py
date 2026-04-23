@@ -1,49 +1,26 @@
 from argparse import ArgumentParser
+from enum import Enum, unique
+from functools import cache
 import logging
 import sys
 from traceback import format_exc
 
 
 from constants import __app_name__, app_info_string
+from core.log_utils import setup_logger
+from core.game_utils import random_first_name
+from core.chance_calculator import ChanceCalculator
 from core.die import DieType
 from core.game_die import GameDieFactory
 from core.game import GamePlayer, Game
+from core.dice_games import OddEvenRoundType, OddEvenPlayer, OddEvenGame
 from app import DieApp
 
 logger = logging.getLogger(__app_name__)
 
 
-def setup_logger(logger_name: str = ""):
-    """
-    Sets up a logger with a specific name and configuration.
-
-    This function initializes and configures a logger instance with a provided name.
-    The logger is configured to stream messages to the standard output using a specific
-    log format. Useful for consistent logging across various modules.
-
-    :param logger_name: The name of the logger to set up. If not provided, the root logger is used.
-    :type logger_name: str
-    :return: A configured logger instance.
-    :rtype: logging.Logger
-    """
-    log_formatter = logging.Formatter(
-        "%(asctime)s |%(levelname)s|%(funcName)s:%(lineno)d| %(message)s"
-    )
-    log_handler = logging.StreamHandler(sys.stdout)
-    log_handler.setFormatter(log_formatter)
-
-    logger_edit = logging.getLogger(logger_name)
-    logger_edit.addHandler(log_handler)
-
-
 def run_die_sandpit():
     logger.info("Die Sandbox")
-
-    # die_type = DieType.random()
-    # die_type = DieType.D6
-
-    # game_die = GameDieFactory.new_die(die_type.sides)
-    # logger.info(f"New Die: {game_die}")
 
     # game
     player = GamePlayer.default_player()
@@ -72,6 +49,59 @@ def run_die_sandpit():
     logger.info(f"Totals: {totals}, full: {full_total}")
 
 
+def run_odds_evens_game():
+    logger.info("Odds and Evens")
+
+    def player_text(ply:OddEvenPlayer):
+        return f"{ply.name.rjust(10)} ${ply.cash:4d}: score:{ply.score:3d} [{','.join([str(d) for d in ply.dice])}]"
+
+    dice_types = [(DieType.D6, 5),]
+    # dice_types = [(DieType.D3, 1), (DieType.D4, 2), (DieType.D6, 2)]
+
+    ply_1 = OddEvenPlayer(random_first_name(), dice=GameDieFactory.dice_group(dice_types))
+    ply_2 = OddEvenPlayer(random_first_name(), dice=GameDieFactory.dice_group(dice_types))
+
+    for player in [ply_1, ply_2]:
+        logger.info(player_text(player))
+
+    num_games = 5
+    # valid odd number of games
+    num_games += 1 if num_games % 2 == 0 else 0
+
+    game = OddEvenGame(ply_1, ply_2, OddEvenRoundType.round_list(num_rounds=2))
+    wins = {ply: 0 for ply in [ply_1, ply_2]}
+    for game_num in range(1, num_games + 1):
+        game.reset()
+        while not game.has_finished():
+            game.play_round()
+        winner, score = game.winner()
+        if winner is None:
+            winner_text = "Tied!"
+        else:
+            winner_text = f"Winner {winner.name}"
+            wins[winner] += 1
+        logger.info(f"Game {game_num}: {winner_text} : {score[0]} - {score[1]}")
+
+    wins = sorted([(key, value) for key, value in wins.items()], key=lambda p: p[1], reverse=True)
+    wins_text = ", ".join([f"{w[0].name} ({w[1]})" for w in wins])
+    logger.info(f"Winner: {wins_text}")
+
+
+def chance_sandpit():
+    logger.info("Chance Sandpit")
+
+    denom = 10
+    chance = ChanceCalculator(1/denom)
+
+    for i in range(10):
+        count = 0
+        while True:
+            count += 1
+            if chance.roll():
+                break
+        logger.info(f"{i+1}: Rolled {count} times for 1/{denom} chance.")
+
+
 def main(args):
     setup_logger(__app_name__)
     logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
@@ -85,7 +115,9 @@ def main(args):
         sys.exit(app.run())
 
     try:
-        run_die_sandpit()
+        # run_die_sandpit()
+        # run_odds_evens_game()
+        chance_sandpit()
 
     except Exception as e:
         logger.debug(format_exc())
