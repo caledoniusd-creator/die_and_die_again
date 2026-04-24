@@ -3,6 +3,8 @@ from faker import Faker
 
 fake = Faker()
 
+def reseed_faker(new_seed: int = None):
+    Faker.seed(new_seed)
 
 def random_first_name(gender: str = None) -> str:
     """

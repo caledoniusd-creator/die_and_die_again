@@ -16,7 +16,7 @@ from PySide6.QtGui import QColor
 from ui.die_widget import DieWidget
 from ui.dice_container_widgets import RollingDiceWidget, PlayerInventoryWidget
 from ui.player_widget import PlayerWidget
-from core.game import GamePlayer
+from core.game import GamePlayer, Game
 from core.game_die import GameDieFactory
 from core.die import DieType
 from die_and_die_again.constants import __app_name__, __version__
@@ -91,7 +91,7 @@ class SandboxWindow(QMainWindow):
         self.sub_windows["Single Die Test"] = sw1
 
         # 2. Player Info Test
-        self.player = GamePlayer.default_player()
+        self.player = Game.default_player()
         player_info = PlayerWidget(self.player)
         sw2 = QMdiSubWindow()
         sw2.setWidget(player_info)

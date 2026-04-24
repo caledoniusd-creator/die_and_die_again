@@ -10,7 +10,8 @@ from core.game_utils import random_first_name
 from core.chance_calculator import ChanceCalculator
 from core.die import DieType, DieRollWorker, DieWeightsWorker
 from core.game_die import GameDieFactory
-from core.game import PlayerBase, GamePlayer
+from core.player import PlayerBase
+from core.game import GamePlayer, Game
 from core.dice_games import OddEvenRoundType, OddEvenPlayer, OddEvenGame
 from app import DieApp
 
@@ -92,7 +93,7 @@ def run_odds_evens_game():
     ]
     # dice_types = [(DieType.D3, 1), (DieType.D4, 2), (DieType.D6, 2)]
 
-    player = GamePlayer.default_player()
+    player = Game.default_player()
     player_dice, player_missing = player.get_dice_group(dice_types)
     if player_missing:
         raise ValueError(f"Player Missing Dice: {player_missing}")
@@ -153,6 +154,14 @@ def chance_sandpit():
         logger.info(f"{i + 1}: Rolled {count} times for 1/{denom} chance.")
 
 
+def run_main_game():
+    game = Game.default_game("Dwayne")
+    # game_seed = 19790918
+    # game = Game.seeded_game(game_seed)
+
+    logger.info(f"Starting Game: {game}")
+
+
 def main(app_args):
     setup_logger(__app_name__)
     logger.setLevel(logging.DEBUG if app_args.verbose else logging.INFO)
@@ -167,8 +176,9 @@ def main(app_args):
 
     try:
         # run_die_sandpit()
-        run_odds_evens_game()
+        # run_odds_evens_game()
         # chance_sandpit()
+        run_main_game()
 
     except Exception as e:
         logger.debug(format_exc())

@@ -35,14 +35,6 @@ class OddEvenPlayer:
     def player(self):
         return self._player
 
-    # @property
-    # def name(self):
-    #     return self.player.name
-
-    # @property
-    # def cash(self):
-    #     return self.player.cash
-
     @property
     def dice(self):
         return self._dice
