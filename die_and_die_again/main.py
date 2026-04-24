@@ -153,21 +153,21 @@ def chance_sandpit():
         logger.info(f"{i + 1}: Rolled {count} times for 1/{denom} chance.")
 
 
-def main(args):
+def main(app_args):
     setup_logger(__app_name__)
-    logger.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    logger.setLevel(logging.DEBUG if app_args.verbose else logging.INFO)
     logger.info(app_info_string())
     logger.info(
         f"[loglvl={logging.getLevelName(logger.getEffectiveLevel())}]Starting..."
     )
 
-    if args.gui:
+    if app_args.gui:
         app = DieApp(sys.argv)
         sys.exit(app.run())
 
     try:
-        run_die_sandpit()
-        # run_odds_evens_game()
+        # run_die_sandpit()
+        run_odds_evens_game()
         # chance_sandpit()
 
     except Exception as e:

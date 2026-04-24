@@ -5,7 +5,7 @@ import logging
 
 
 from constants import __app_name__
-from .game import PlayerBase
+from .player import PlayerBase
 
 logger = logging.getLogger(__app_name__)
 

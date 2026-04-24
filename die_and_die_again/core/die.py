@@ -141,7 +141,7 @@ class Die:
     def weighting_str(self):
         return (
             "["
-            + ",".join([f"{v:2d}:{w:.2f}" for v, w in zip(self.values, self.weights)])
+            + ", ".join([f"{v:2d}:{w:.2f}" for v, w in zip(self.values, self.weights)])
             + "]"
         )
 
