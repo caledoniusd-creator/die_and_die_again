@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from enum import Enum, unique
 import logging
 from random import choices, choice, random
@@ -58,7 +59,7 @@ class Die:
         sides: int = 6,
         weights: list | None = None,
         unique_id: UUID | None = None,
-        roll_count: int | None = 0,
+        rolled_values: dict | None = None,
     ):
         if sides < 2:
             raise ValueError(f"Min sides is 2, got {sides}")
@@ -73,7 +74,7 @@ class Die:
         self._values = [v for v in range(1, sides + 1)]
         self._weights = weights or [1.0 / sides for _ in range(sides)]
 
-        self._rolled_values = {v: 0 for v in self._values}
+        self._rolled_values = rolled_values or {v: 0 for v in self._values}
 
     def __repr__(self):
         return f"<{self.__class__.__name__} unique_id={self.unique_id}, sides={self.sides}, values={self.weighting_str()}>"
@@ -113,6 +114,9 @@ class Die:
     @property
     def rolled_values(self):
         return self._rolled_values
+
+    def rolled_value_count(self, value: int):
+        return self._rolled_values[value]
 
     def reset_weights(self):
         self._weights = [1.0 / self.sides for _ in range(self.sides)]
@@ -156,7 +160,7 @@ class Die:
         self.reset_weights()
 
 
-class DieWeightsWorker:
+class BaseDieWorker:
     def __init__(self, die: Die):
         self._die = die
 
@@ -164,11 +168,57 @@ class DieWeightsWorker:
     def die(self):
         return self._die
 
-    def random_weight_variation(self, range_value: float):
 
+class DieWeightsWorker(BaseDieWorker):
+    def __init__(self, die: Die):
+        super().__init__(die)
+
+    def random_weight_variation(self, range_value: float):
         def new_variation_pc():
             return -range_value + (2 * range_value * random())
 
-        # logger.info(f"Applying random weights variations: \u00b1 {range_value:3.3f}")
         for v in self.die.values:
             self.die.change_weighting(v, new_variation_pc())
+
+    def adjust_weights(self, value_defs: list):
+        for vd in value_defs:
+            self.die.change_weighting(vd[0], vd[1])
+
+
+@dataclass
+class DeviationData:
+    roll_ratios: list
+    deviations: list
+    avg_ratio: float
+    avg_deviation: float
+
+    def sort_lists_by_value(self, reverse: bool = True):
+        for temp_values in [self.deviations, self.roll_ratios]:
+            temp_values.sort(key=lambda r: r[1], reverse=reverse)
+
+    def sort_lists_by_key(self, reverse: bool = False):
+        for temp_values in [self.deviations, self.roll_ratios]:
+            temp_values.sort(key=lambda r: r[0], reverse=reverse)
+
+
+class DieRollWorker(BaseDieWorker):
+    def __init__(self, die: Die):
+        super().__init__(die)
+
+    @property
+    def num_rolls(self):
+        return self.die.roll_count
+
+    def calculate_roll_ratios(self):
+        return [
+            (v, self.die.rolled_value_count(v) / self.num_rolls)
+            for v in self.die.values
+        ]
+
+    def calculate_deviations_from_average(self):
+        roll_ratios = self.calculate_roll_ratios()
+        average_ratio = sum([r[1] for r in roll_ratios]) / len(roll_ratios)
+        deviations = [(rr[0], abs(average_ratio - rr[1])) for rr in roll_ratios]
+        average_deviation = sum([d[1] for d in deviations]) / len(deviations)
+
+        return DeviationData(roll_ratios, deviations, average_ratio, average_deviation)

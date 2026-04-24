@@ -8,9 +8,9 @@ from constants import __app_name__, app_info_string
 from core.log_utils import setup_logger
 from core.game_utils import random_first_name
 from core.chance_calculator import ChanceCalculator
-from core.die import DieType
-from core.game_die import GameDieFactory, GameDie
-from core.game import PlayerBase, GamePlayer, Game
+from core.die import DieType, DieRollWorker, DieWeightsWorker
+from core.game_die import GameDieFactory
+from core.game import PlayerBase, GamePlayer
 from core.dice_games import OddEvenRoundType, OddEvenPlayer, OddEvenGame
 from app import DieApp
 
@@ -20,23 +20,60 @@ logger = logging.getLogger(__app_name__)
 def run_die_sandpit():
     logger.info("Die Sandbox")
 
-    # game
-    player = GamePlayer.default_player()
-    game = Game(player=player)
+    die_1 = GameDieFactory.random_die(die_type=DieType.D6)
+    die_2 = GameDieFactory.random_die(die_type=DieType.D6)
+    die_3 = GameDieFactory.random_die(die_type=DieType.D6)
+    die_4 = GameDieFactory.random_die(die_type=DieType.D4)
+    die_5 = GameDieFactory.random_die(die_type=DieType.D12)
 
-    logger.info(f"New Game: {game} | #Dice={player.num_dice}")
-    logger.info("Dice: [" + "|".join([str(d) for d in player.dice]) + "]")
-
-    group_def = [
-        (DieType.D6, 5),
+    all_dice = [die_1, die_2, die_3, die_4, die_5]
+    die_names = [
+        "Die 1",
+        "Die 2 (O\u2191)",
+        "Die 3 (E\u2191)",
+        "Lucky 4(4\u2191)",
+        "#5 12s",
     ]
-    dice_group, missing_dice = player.get_dice_group(group_def)
-    if missing_dice:
-        logger.warning(f"Missing Dice: {missing_dice}")
 
-    logger.info(
-        f"Dice Group: {GameDie.dice_list_string(dice_group)} ({len(dice_group)})"
+    DieWeightsWorker(die_2).adjust_weights([(1, 200.0), (3, 250.0), (5, 300.0)])
+    DieWeightsWorker(die_3).adjust_weights([(2, 200.0), (4, 250.0), (6, 300.0)])
+    DieWeightsWorker(die_4).adjust_weights(
+        [
+            (4, 400.0),
+        ]
     )
+
+    line_length = 120
+    num_rolls = 100000
+    num_rolls_len = len(str(num_rolls))
+
+    for die, name in zip(all_dice, die_names):
+        sys.stdout.flush()
+        sys.stdout.write(f"{str('~' * line_length)}\n{name} Rolls: {num_rolls}\n")
+
+        for i in range(num_rolls):
+            value = die.roll()
+            if i % 100 == 0 or i == num_rolls - 1:
+                text = f"{str(i + 1).ljust(num_rolls_len).rjust(num_rolls_len)}/{num_rolls} [{value}]"
+                sys.stdout.write(f"\r{text.ljust(line_length)}")
+                sys.stdout.flush()
+
+        sys.stdout.write("\r" + str(" " * line_length))
+        sys.stdout.flush()
+
+        roll_data = DieRollWorker(die).calculate_deviations_from_average()
+        roll_data.sort_lists_by_value()
+
+        def write_values(vals, title):
+            log_values = " ".join([f"{v:1d}: {w:.3f}" for v, w in vals])
+            sys.stdout.write(f"{title.rjust(14)}: {log_values}\n")
+
+        sys.stdout.write(
+            f"\rAvg ratio: {roll_data.avg_ratio:.3f}, Avg devtn: {roll_data.avg_deviation:.3f}\n"
+        )
+        write_values(roll_data.roll_ratios, "Roll Ratios")
+        write_values(roll_data.deviations, "Deviations")
+        sys.stdout.write(str("=" * line_length) + "\n")
 
 
 def run_odds_evens_game():
@@ -129,8 +166,8 @@ def main(args):
         sys.exit(app.run())
 
     try:
-        # run_die_sandpit()
-        run_odds_evens_game()
+        run_die_sandpit()
+        # run_odds_evens_game()
         # chance_sandpit()
 
     except Exception as e:

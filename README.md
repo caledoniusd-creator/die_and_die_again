@@ -21,6 +21,7 @@ A PySide6-based dice game and simulation framework featuring custom geometric di
 - **Container Widgets**: `RollingDiceWidget` and `PlayerInventoryWidget` for managing groups of dice.
 - **Player Widget**: Displays player name, cash, and dice statistics.
 - **Sandbox Window**: An MDI (Multiple Document Interface) environment for testing all widgets and game logic simultaneously.
+    - **Window Management**: Includes a "View" menu to toggle the visibility of individual test sub-windows.
 
 ### Core Logic
 - **Flexible Dice System**: `Die` and `GameDie` classes supporting weighted rolls, random variations, and different materials (Wood, Stone, Resin, Metal, etc.).

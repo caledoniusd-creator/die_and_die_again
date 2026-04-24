@@ -31,7 +31,35 @@ class SandboxWindow(QMainWindow):
         self.mdi = QMdiArea()
         self.setCentralWidget(self.mdi)
 
+        self.sub_windows = {}
         self.setup_widgets()
+        self.setup_menu()
+
+    def setup_menu(self):
+        menubar = self.menuBar()
+        view_menu = menubar.addMenu("&View")
+        view_menu.setObjectName("View")
+
+        for title, sw in self.sub_windows.items():
+            action = view_menu.addAction(title)
+            action.setCheckable(True)
+            action.setChecked(True)
+            action.triggered.connect(lambda checked, w=sw: w.setVisible(checked))
+            # Ensure action state stays in sync if window is closed/hidden via other means
+            sw.installEventFilter(self)
+
+    def eventFilter(self, obj, event):
+        from PySide6.QtCore import QEvent
+
+        if event.type() in [QEvent.Hide, QEvent.Show]:
+            for title, sw in self.sub_windows.items():
+                if sw == obj:
+                    view_menu = self.menuBar().findChild(QWidget, "View")
+                    if view_menu:
+                        for action in view_menu.actions():
+                            if action.text() == title:
+                                action.setChecked(sw.isVisible())
+        return super().eventFilter(obj, event)
 
     def setup_widgets(self):
         # 1. Individual Die Test
@@ -60,6 +88,7 @@ class SandboxWindow(QMainWindow):
         sw1.setWidget(die_test_widget)
         sw1.setWindowTitle("Single Die Test")
         self.mdi.addSubWindow(sw1)
+        self.sub_windows["Single Die Test"] = sw1
 
         # 2. Player Info Test
         self.player = GamePlayer.default_player()
@@ -68,6 +97,7 @@ class SandboxWindow(QMainWindow):
         sw2.setWidget(player_info)
         sw2.setWindowTitle("Player Info")
         self.mdi.addSubWindow(sw2)
+        self.sub_windows["Player Info"] = sw2
 
         # 3. Player Inventory Test
         inventory = PlayerInventoryWidget("Player Inventory")
@@ -76,6 +106,7 @@ class SandboxWindow(QMainWindow):
         sw3.setWidget(inventory)
         sw3.setWindowTitle("Inventory")
         self.mdi.addSubWindow(sw3)
+        self.sub_windows["Inventory"] = sw3
 
         # 4. Rolling Area Test
         self.rolling_area = RollingDiceWidget("Rolling Area")
@@ -87,6 +118,7 @@ class SandboxWindow(QMainWindow):
         sw4.setWidget(self.rolling_area)
         sw4.setWindowTitle("Multi-Roll Test")
         self.mdi.addSubWindow(sw4)
+        self.sub_windows["Multi-Roll Test"] = sw4
 
         self.mdi.tileSubWindows()
 
