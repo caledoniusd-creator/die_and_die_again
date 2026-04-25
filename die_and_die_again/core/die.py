@@ -60,6 +60,7 @@ class Die:
         weights: list | None = None,
         unique_id: UUID | None = None,
         rolled_values: dict | None = None,
+        history: list | None = None
     ):
         if sides < 2:
             raise ValueError(f"Min sides is 2, got {sides}")
@@ -75,6 +76,7 @@ class Die:
         self._weights = weights or [1.0 / sides for _ in range(sides)]
 
         self._rolled_values = rolled_values or {v: 0 for v in self._values}
+        self._history = history or []
 
     def __repr__(self):
         return f"<{self.__class__.__name__} unique_id={self.unique_id}, sides={self.sides}, values={self.weighting_str()}>"
@@ -115,6 +117,16 @@ class Die:
     def rolled_values(self):
         return self._rolled_values
 
+    @property
+    def history(self):
+        return self._history
+
+    @property
+    def last_roll(self):
+        if not self._history:
+            return None
+        return self._history[-1]
+
     def rolled_value_count(self, value: int):
         return self._rolled_values[value]
 
@@ -148,6 +160,7 @@ class Die:
     def roll(self):
         rolled_value = choices(self.values, weights=self.weights, k=1)[0]
         self._rolled_values[rolled_value] += 1
+        self._history.append(rolled_value)
         return rolled_value
 
     def multiple_roll(self, n: int):
@@ -157,6 +170,7 @@ class Die:
 
     def reset_all(self):
         self._rolled_values = {v: 0 for v in self._values}
+        self._history.clear()
         self.reset_weights()
 
 

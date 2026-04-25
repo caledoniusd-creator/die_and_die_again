@@ -175,7 +175,7 @@ def main(app_args):
         sys.exit(app.run())
 
     try:
-        # run_die_sandpit()
+        run_die_sandpit()
         # run_odds_evens_game()
         # chance_sandpit()
         run_main_game()
